@@ -70,7 +70,8 @@ const MainMenu = () => {
   const pingServer = async () => {
     try {
       setLoading(true);
-      const pingUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/ping/pingHost?host=${window.location.origin}`;
+      const host = window.location.hostname;
+      const pingUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/ping/pingHost?host=${host}`;
       const pingResponse = await fetch(pingUrl);
 
       if (!pingResponse.ok) {
