@@ -389,6 +389,10 @@ const MainMenu = () => {
                         </div>
                       </div>
                     </div>
+                  ) : stats.containersInfo.filter((container) => container.status === "running").length === 0 ? (
+                    <div className="p-3 bg-green-900/20 rounded-lg">
+                      <p className="text-gray-400 text-center">No running containers available</p>
+                    </div>
                   ) : (
                     stats.containersInfo
                       .filter((container) => container.status === "running")
@@ -433,6 +437,10 @@ const MainMenu = () => {
                           <div className="h-4 w-16 bg-white/20 rounded" />
                         </div>
                       </div>
+                    </div>
+                  ) : stats.containersInfo.filter((container) => container.status === "exited").length === 0 ? (
+                    <div className="p-3 bg-red-900/20 rounded-lg">
+                      <p className="text-gray-400 text-center">No stopped containers available</p>
                     </div>
                   ) : (
                     stats.containersInfo
