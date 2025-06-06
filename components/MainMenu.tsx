@@ -10,6 +10,7 @@ import {
   FaLinux,
   FaWindows,
   FaApple,
+  FaClock,
 } from "react-icons/fa";
 import { StatCard } from "./StatCard";
 import SystemInfo from "./SystemInfo";
@@ -35,19 +36,36 @@ const MainMenu = () => {
       distro: "-----",
       architecture: "-----",
     },
+    storageInfo: [
+      {
+        fs: "----",
+        type: "----",
+        size: 0,
+        used: 0,
+        use: 0,
+      },
+    ],
+    containersInfo: [
+      {
+        name: "---",
+        tag: "---",
+        uptime: 0,
+        status: "---",
+      },
+    ],
   });
 
-//   const [containers, setContainers] = useState<ContainerState>({
-//     running: [
-//       { id: "1", name: "nginx-web", uptime: "2d 5h" },
-//       { id: "2", name: "postgres-db", uptime: "1d 12h" },
-//       { id: "3", name: "redis-cache", uptime: "3d 8h" },
-//     ],
-//     stopped: [
-//       { id: "4", name: "backup-service" },
-//       { id: "5", name: "monitoring-agent" },
-//     ],
-//   });
+  const [containers, setContainers] = useState<ContainerState>({
+    running: [
+      { id: "1", name: "nginx-web", uptime: "2d 5h" },
+      { id: "2", name: "postgres-db", uptime: "1d 12h" },
+      { id: "3", name: "redis-cache", uptime: "3d 8h" },
+    ],
+    stopped: [
+      { id: "4", name: "backup-service" },
+      { id: "5", name: "monitoring-agent" },
+    ],
+  });
 
   const pingServer = async () => {
     try {
@@ -72,24 +90,35 @@ const MainMenu = () => {
   const fetchSystemInfo = async () => {
     try {
       setLoading(true);
-      const [osResponse, cpuResponse, cpuUsageResponse, memoryResponse] =
-        await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/server/info`),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cpu/info`),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cpu/usage`),
-          fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/memory/usage`),
-        ]);
+      const [
+        osResponse,
+        cpuResponse,
+        cpuUsageResponse,
+        memoryResponse,
+        storageResponse,
+        containersResponse
+      ] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/server/info`),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cpu/info`),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cpu/usage`),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/memory/usage`),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/storage/info`),
+        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/docker/containers`),
+      ]);
 
       if (!osResponse.ok || !cpuResponse.ok || !memoryResponse.ok) {
         throw new Error("Failed to fetch system information");
       }
 
-      const [osInfo, cpuInfo, cpuUsageInfo, memoryInfo] = await Promise.all([
-        osResponse.json(),
-        cpuResponse.json(),
-        cpuUsageResponse.json(),
-        memoryResponse.json(),
-      ]);
+      const [osInfo, cpuInfo, cpuUsageInfo, memoryInfo, storageInfo, containersInfo] =
+        await Promise.all([
+          osResponse.json(),
+          cpuResponse.json(),
+          cpuUsageResponse.json(),
+          memoryResponse.json(),
+          storageResponse.json(),
+          containersResponse.json()
+        ]);
 
       setStats((prevStats) => ({
         ...prevStats,
@@ -107,6 +136,8 @@ const MainMenu = () => {
               (1024 * 1024 * 1024)
           )} GB`,
         },
+        storageInfo,
+        containersInfo
       }));
     } catch (error) {
       console.error("Error fetching system information:", error);
@@ -145,7 +176,12 @@ const MainMenu = () => {
           Server Monitor
         </h1>
 
-        <SystemInfo loading={loading} stats={stats} getOSIcon={getOSIcon} pingServer={pingServer} />
+        <SystemInfo
+          loading={loading}
+          stats={stats}
+          getOSIcon={getOSIcon}
+          pingServer={pingServer}
+        />
 
         {/* Rest of the existing components */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -184,7 +220,7 @@ const MainMenu = () => {
           /> */}
         </div>
 
-        {/* <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="backdrop-blur-md bg-black/30 p-6 rounded-xl shadow-lg border border-white/20 hover:border-white/40 transition-all duration-300 animate-slideInLeft">
             <h2 className="text-xl font-semibold text-silver mb-4">
               File System
@@ -195,24 +231,62 @@ const MainMenu = () => {
                   Storage Overview
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-blue-900/20 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <FaHdd className="w-5 h-5 text-blue-400" />
-                      <div>
-                        <p className="text-silver">Total Storage</p>
-                        <p className="text-gray-400 text-sm">1.2 TB</p>
+                  {loading ? (
+                    <>
+                      <div className="p-3 bg-blue-900/20 rounded-lg animate-pulse">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-5 h-5 bg-white/20 rounded" />
+                          <div className="space-y-2">
+                            <div className="h-4 w-24 bg-white/20 rounded" />
+                            <div className="h-3 w-16 bg-white/20 rounded" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="p-3 bg-green-900/20 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <FaHdd className="w-5 h-5 text-green-400" />
-                      <div>
-                        <p className="text-silver">Free Space</p>
-                        <p className="text-gray-400 text-sm">456 GB</p>
+                      <div className="p-3 bg-green-900/20 rounded-lg animate-pulse">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-5 h-5 bg-white/20 rounded" />
+                          <div className="space-y-2">
+                            <div className="h-4 w-24 bg-white/20 rounded" />
+                            <div className="h-3 w-16 bg-white/20 rounded" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-blue-900/20 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FaHdd className="w-5 h-5 text-blue-400" />
+                          <div>
+                            <p className="text-silver">Total Storage</p>
+                            <p className="text-gray-400 text-sm">
+                              {(
+                                stats.storageInfo[0].size /
+                                (1024 * 1024 * 1024)
+                              ).toFixed(2)}{" "}
+                              GB
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-green-900/20 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <FaHdd className="w-5 h-5 text-green-400" />
+                          <div>
+                            <p className="text-silver">Free Space</p>
+                            <p className="text-gray-400 text-sm">
+                              {(
+                                (stats.storageInfo[0].size -
+                                  stats.storageInfo[0].used) /
+                                (1024 * 1024 * 1024)
+                              ).toFixed(2)}{" "}
+                              GB
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -221,86 +295,171 @@ const MainMenu = () => {
                   Mount Points
                 </h3>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 bg-purple-900/20 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <FaHdd className="w-5 h-5 text-purple-400" />
-                      <div>
-                        <span className="text-silver">/dev/sda1</span>
-                        <p className="text-gray-400 text-sm">Root Partition</p>
+                  {loading ? (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-purple-900/20 rounded-lg animate-pulse">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 bg-white/20 rounded" />
+                            <div className="space-y-2">
+                              <div className="h-4 w-32 bg-white/20 rounded" />
+                              <div className="h-3 w-24 bg-white/20 rounded" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="h-4 w-16 bg-white/20 rounded" />
+                            <div className="h-3 w-24 bg-white/20 rounded" />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-silver">64% Used</p>
-                      <p className="text-gray-400 text-sm">768 GB / 1.2 TB</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-indigo-900/20 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <FaHdd className="w-5 h-5 text-indigo-400" />
-                      <div>
-                        <span className="text-silver">/dev/sdb1</span>
-                        <p className="text-gray-400 text-sm">Data Partition</p>
+                  ) : (
+                    stats.storageInfo.map((disk, index) => (
+                      <div
+                        key={index}
+                        className="relative flex items-center justify-between p-3 bg-purple-900/20 rounded-lg overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-purple-500/10" style={{ width: `${disk.use}%` }} />
+                        <div className="relative flex items-center space-x-3">
+                          <FaHdd className="w-5 h-5 text-purple-400" />
+                          <div>
+                            <span className="text-silver">{disk.fs}</span>
+                            <p className="text-gray-400 text-sm">{disk.type}</p>
+                          </div>
+                        </div>
+                        <div className="relative text-right">
+                          <p className="text-silver">
+                            {disk.use.toFixed(1)}% Used
+                          </p>
+                          <p className="text-gray-400 text-sm">
+                            {(disk.used / (1024 * 1024 * 1024)).toFixed(2)} GB /{" "}
+                            {(disk.size / (1024 * 1024 * 1024)).toFixed(2)} GB
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-silver">42% Used</p>
-                      <p className="text-gray-400 text-sm">256 GB / 600 GB</p>
-                    </div>
-                  </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="backdrop-blur-md bg-black/30 p-6 rounded-xl shadow-lg border border-white/20 hover:border-white/40 transition-all duration-300 animate-slideInRight">
-            <h2 className="text-xl font-semibold text-silver mb-4">
-              Docker Containers
-            </h2>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium text-silver">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-silver flex items-center gap-2">
+                <FaDocker className="w-5 h-5 text-blue-400" />
+                Docker Containers
+              </h2>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-sm">
+                  {loading ? (
+                    <div className="h-4 w-16 bg-white/20 rounded animate-pulse" />
+                  ) : (
+                    `${stats.containersInfo.filter(c => c.status === "running").length} Running`
+                  )}
+                </span>
+                <span className="px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-sm">
+                  {loading ? (
+                    <div className="h-4 w-16 bg-white/20 rounded animate-pulse" />
+                  ) : (
+                    `${stats.containersInfo.filter(c => c.status === "exited").length} Stopped`
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-silver mb-3 flex items-center gap-2">
                   Running Containers
                 </h3>
                 <div className="space-y-2">
-                  {containers.running.map((container) => (
-                    <div
-                      key={container.id}
-                      className="flex items-center justify-between p-3 bg-green-900/20 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <FaDocker className="w-5 h-5 text-green-400" />
-                        <span className="text-silver">{container.name}</span>
+                  {loading ? (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-green-900/20 rounded-lg animate-pulse">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 bg-white/20 rounded" />
+                            <div className="space-y-2">
+                              <div className="h-4 w-32 bg-white/20 rounded" />
+                              <div className="h-3 w-24 bg-white/20 rounded" />
+                            </div>
+                          </div>
+                          <div className="h-4 w-24 bg-white/20 rounded" />
+                        </div>
                       </div>
-                      <span className="text-gray-400 text-sm">
-                        Uptime: {container.uptime}
-                      </span>
                     </div>
-                  ))}
+                  ) : (
+                    stats.containersInfo
+                      .filter((container) => container.status === "running")
+                      .map((container) => (
+                        <div
+                          key={container.name}
+                          className="flex items-center justify-between p-3 bg-green-900/20 rounded-lg hover:bg-green-900/30 transition-colors"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <FaDocker className="w-5 h-5 text-green-400" />
+                            <div>
+                              <span className="text-silver font-medium">{container.name}</span>
+                              <p className="text-gray-400 text-sm">{container.tag}</p>
+                            </div>
+                          </div>
+                          <span className="text-gray-400 text-sm bg-green-900/30 px-2 py-1 rounded flex items-center gap-1">
+                            <FaClock className="w-3 h-3" />
+                            Uptime: {Math.floor(container.uptime / (60 * 60))}h {Math.floor((container.uptime % (60 * 60)) / 60)}m
+                          </span>
+                        </div>
+                      ))
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <h3 className="text-lg font-medium text-silver">
+              <div>
+                <h3 className="text-lg font-medium text-silver mb-3 flex items-center gap-2">
                   Stopped Containers
                 </h3>
                 <div className="space-y-2">
-                  {containers.stopped.map((container) => (
-                    <div
-                      key={container.id}
-                      className="flex items-center justify-between p-3 bg-red-900/20 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <FaDocker className="w-5 h-5 text-red-400" />
-                        <span className="text-silver">{container.name}</span>
+                  {loading ? (
+                    <div className="space-y-2">
+                      <div className="p-3 bg-red-900/20 rounded-lg animate-pulse">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-5 h-5 bg-white/20 rounded" />
+                            <div className="space-y-2">
+                              <div className="h-4 w-32 bg-white/20 rounded" />
+                              <div className="h-3 w-24 bg-white/20 rounded" />
+                            </div>
+                          </div>
+                          <div className="h-4 w-16 bg-white/20 rounded" />
+                        </div>
                       </div>
-                      <span className="text-gray-400 text-sm">Stopped</span>
                     </div>
-                  ))}
+                  ) : (
+                    stats.containersInfo
+                      .filter((container) => container.status === "exited")
+                      .map((container) => (
+                        <div
+                          key={container.name}
+                          className="flex items-center justify-between p-3 bg-red-900/20 rounded-lg hover:bg-red-900/30 transition-colors"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <FaDocker className="w-5 h-5 text-red-400" />
+                            <div>
+                              <span className="text-silver font-medium">{container.name}</span>
+                              <p className="text-gray-400 text-sm">{container.tag}</p>
+                            </div>
+                          </div>
+                          <span className="text-gray-400 text-sm bg-red-900/30 px-2 py-1 rounded">
+                            Stopped
+                          </span>
+                        </div>
+                      ))
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

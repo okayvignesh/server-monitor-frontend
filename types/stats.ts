@@ -16,6 +16,23 @@ export interface SystemStats {
     distro: string;
     architecture: string;
   };
+  storageInfo: [
+    {
+      fs: string;
+      type: string;
+      size: number;
+      used: number;
+      use: number;
+    }
+  ];
+  containersInfo: [
+    {
+      name: string;
+      tag: string;
+      uptime: number;
+      status: string;
+    }
+  ];
 }
 
 export interface Container {
