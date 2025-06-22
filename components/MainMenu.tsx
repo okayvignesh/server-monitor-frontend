@@ -98,7 +98,7 @@ const MainMenu = () => {
 				cpuUsageResponse,
 				memoryResponse,
 				storageResponse,
-				containersResponse
+				containersResponse,
 			] = await Promise.all([
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/server/info`),
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cpu/info`),
@@ -112,15 +112,21 @@ const MainMenu = () => {
 				throw new Error('Failed to fetch system information');
 			}
 
-			const [osInfo, cpuInfo, cpuUsageInfo, memoryInfo, storageInfo, containersInfo] =
-				await Promise.all([
-					osResponse.json(),
-					cpuResponse.json(),
-					cpuUsageResponse.json(),
-					memoryResponse.json(),
-					storageResponse.json(),
-					containersResponse.json()
-				]);
+			const [
+				osInfo,
+				cpuInfo,
+				cpuUsageInfo,
+				memoryInfo,
+				storageInfo,
+				containersInfo,
+			] = await Promise.all([
+				osResponse.json(),
+				cpuResponse.json(),
+				cpuUsageResponse.json(),
+				memoryResponse.json(),
+				storageResponse.json(),
+				containersResponse.json(),
+			]);
 
 			calculateTotalStorage(storageInfo);
 
@@ -141,7 +147,7 @@ const MainMenu = () => {
 					)} GB`,
 				},
 				storageInfo,
-				containersInfo
+				containersInfo,
 			}));
 		} catch (error) {
 			console.error('Error fetching system information:', error);
@@ -363,152 +369,155 @@ const MainMenu = () => {
 						</div>
 					</div>
 
-					<div className="backdrop-blur-md bg-black/30 p-6 rounded-xl shadow-lg border border-white/20 hover:border-white/40 transition-all duration-300 animate-slideInRight">
-						<div className="flex items-center justify-between mb-6">
-							<h2 className="text-xl font-semibold text-silver flex items-center gap-2">
-								<FaDocker className="w-5 h-5 text-blue-400" />
-								Docker Containers
-							</h2>
-							<div className="flex gap-2">
-								<span className="px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-sm">
-									{loading ? (
-										<div className="h-4 w-16 bg-white/20 rounded animate-pulse" />
-									) : (
-										`${
-											stats.containersInfo.filter((c) => c.status === 'running')
-												.length
-										} Running`
-									)}
-								</span>
-								<span className="px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-sm">
-									{loading ? (
-										<div className="h-4 w-16 bg-white/20 rounded animate-pulse" />
-									) : (
-										`${
-											stats.containersInfo.filter((c) => c.status === 'exited')
-												.length
-										} Stopped`
-									)}
-								</span>
-							</div>
-						</div>
-
-						<div className="space-y-6">
-							<div>
-								<h3 className="text-lg font-medium text-silver mb-3 flex items-center gap-2">
-									Running Containers
-								</h3>
-								<div className="space-y-2">
-									{loading ? (
-										<div className="space-y-2">
-											<div className="p-3 bg-green-900/20 rounded-lg animate-pulse">
-												<div className="flex items-center justify-between">
-													<div className="flex items-center space-x-3">
-														<div className="w-5 h-5 bg-white/20 rounded" />
-														<div className="space-y-2">
-															<div className="h-4 w-32 bg-white/20 rounded" />
-															<div className="h-3 w-24 bg-white/20 rounded" />
-														</div>
-													</div>
-													<div className="h-4 w-24 bg-white/20 rounded" />
-												</div>
-											</div>
-										</div>
-									) : stats.containersInfo.filter(
-											(container) => container.status === 'running'
-									  ).length === 0 ? (
-										<div className="p-3 bg-green-900/20 rounded-lg">
-											<p className="text-gray-400 text-center">
-												No running containers available
-											</p>
-										</div>
-									) : (
-										stats.containersInfo
-											.filter((container) => container.status === 'running')
-											.map((container) => (
-												<div
-													key={container.name}
-													className="flex items-center justify-between p-3 bg-green-900/20 rounded-lg hover:bg-green-900/30 transition-colors">
-													<div className="flex items-center space-x-3">
-														<FaDocker className="w-5 h-5 text-green-400" />
-														<div>
-															<span className="text-silver font-medium">
-																{container.name}
-															</span>
-															<p className="text-gray-400 text-sm">
-																{container.tag}
-															</p>
-														</div>
-													</div>
-													<span className="text-gray-400 text-sm bg-green-900/30 px-2 py-1 rounded flex items-center gap-1">
-														<FaClock className="w-3 h-3" />
-														Uptime: {Math.floor(
-															container.uptime / (60 * 60)
-														)}h{' '}
-														{Math.floor((container.uptime % (60 * 60)) / 60)}m
-													</span>
-												</div>
-											))
-									)}
+					{stats.containersInfo.length > 0 && (
+						<div className="backdrop-blur-md bg-black/30 p-6 rounded-xl shadow-lg border border-white/20 hover:border-white/40 transition-all duration-300 animate-slideInRight">
+							<div className="flex items-center justify-between mb-6">
+								<h2 className="text-xl font-semibold text-silver flex items-center gap-2">
+									<FaDocker className="w-5 h-5 text-blue-400" />
+									Docker Containers
+								</h2>
+								<div className="flex gap-2">
+									<span className="px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-sm">
+										{loading ? (
+											<div className="h-4 w-16 bg-white/20 rounded animate-pulse" />
+										) : (
+											`${
+												stats.containersInfo.filter(
+													(c) => c.status === 'running'
+												).length
+											} Running`
+										)}
+									</span>
+									<span className="px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-sm">
+										{loading ? (
+											<div className="h-4 w-16 bg-white/20 rounded animate-pulse" />
+										) : (
+											`${
+												stats.containersInfo.filter(
+													(c) => c.status === 'exited'
+												).length
+											} Stopped`
+										)}
+									</span>
 								</div>
 							</div>
 
-							<div>
-								<h3 className="text-lg font-medium text-silver mb-3 flex items-center gap-2">
-									Stopped Containers
-								</h3>
-								<div className="space-y-2">
-									{loading ? (
-										<div className="space-y-2">
-											<div className="p-3 bg-red-900/20 rounded-lg animate-pulse">
-												<div className="flex items-center justify-between">
-													<div className="flex items-center space-x-3">
-														<div className="w-5 h-5 bg-white/20 rounded" />
-														<div className="space-y-2">
-															<div className="h-4 w-32 bg-white/20 rounded" />
-															<div className="h-3 w-24 bg-white/20 rounded" />
+							<div className="space-y-6">
+								<div>
+									<h3 className="text-lg font-medium text-silver mb-3 flex items-center gap-2">
+										Running Containers
+									</h3>
+									<div className="space-y-2">
+										{loading ? (
+											<div className="space-y-2">
+												<div className="p-3 bg-green-900/20 rounded-lg animate-pulse">
+													<div className="flex items-center justify-between">
+														<div className="flex items-center space-x-3">
+															<div className="w-5 h-5 bg-white/20 rounded" />
+															<div className="space-y-2">
+																<div className="h-4 w-32 bg-white/20 rounded" />
+																<div className="h-3 w-24 bg-white/20 rounded" />
+															</div>
 														</div>
+														<div className="h-4 w-24 bg-white/20 rounded" />
 													</div>
-													<div className="h-4 w-16 bg-white/20 rounded" />
 												</div>
 											</div>
-										</div>
-									) : stats.containersInfo.filter(
-											(container) => container.status === 'exited'
-									  ).length === 0 ? (
-										<div className="p-3 bg-red-900/20 rounded-lg">
-											<p className="text-gray-400 text-center">
-												No stopped containers available
-											</p>
-										</div>
-									) : (
-										stats.containersInfo
-											.filter((container) => container.status === 'exited')
-											.map((container) => (
-												<div
-													key={container.name}
-													className="flex items-center justify-between p-3 bg-red-900/20 rounded-lg hover:bg-red-900/30 transition-colors">
-													<div className="flex items-center space-x-3">
-														<FaDocker className="w-5 h-5 text-red-400" />
-														<div>
-															<span className="text-silver font-medium">
-																{container.name}
-															</span>
-															<p className="text-gray-400 text-sm">
-																{container.tag}
-															</p>
+										) : stats.containersInfo.filter(
+												(container) => container.status === 'running'
+										  ).length === 0 ? (
+											<div className="p-3 bg-green-900/20 rounded-lg">
+												<p className="text-gray-400 text-center">
+													No running containers available
+												</p>
+											</div>
+										) : (
+											stats.containersInfo
+												.filter((container) => container.status === 'running')
+												.map((container) => (
+													<div
+														key={container.name}
+														className="flex items-center justify-between p-3 bg-green-900/20 rounded-lg hover:bg-green-900/30 transition-colors">
+														<div className="flex items-center space-x-3">
+															<FaDocker className="w-5 h-5 text-green-400" />
+															<div>
+																<span className="text-silver font-medium">
+																	{container.name}
+																</span>
+																<p className="text-gray-400 text-sm">
+																	{container.tag}
+																</p>
+															</div>
 														</div>
+														<span className="text-gray-400 text-sm bg-green-900/30 px-2 py-1 rounded flex items-center gap-1">
+															<FaClock className="w-3 h-3" />
+															Uptime: {Math.floor(container.uptime / (60 * 60))}
+															h{' '}
+															{Math.floor((container.uptime % (60 * 60)) / 60)}m
+														</span>
 													</div>
-													<span className="text-gray-400 text-sm bg-red-900/30 px-2 py-1 rounded">
-														Stopped
-													</span>
+												))
+										)}
+									</div>
+								</div>
+
+								<div>
+									<h3 className="text-lg font-medium text-silver mb-3 flex items-center gap-2">
+										Stopped Containers
+									</h3>
+									<div className="space-y-2">
+										{loading ? (
+											<div className="space-y-2">
+												<div className="p-3 bg-red-900/20 rounded-lg animate-pulse">
+													<div className="flex items-center justify-between">
+														<div className="flex items-center space-x-3">
+															<div className="w-5 h-5 bg-white/20 rounded" />
+															<div className="space-y-2">
+																<div className="h-4 w-32 bg-white/20 rounded" />
+																<div className="h-3 w-24 bg-white/20 rounded" />
+															</div>
+														</div>
+														<div className="h-4 w-16 bg-white/20 rounded" />
+													</div>
 												</div>
-											))
-									)}
+											</div>
+										) : stats.containersInfo.filter(
+												(container) => container.status === 'exited'
+										  ).length === 0 ? (
+											<div className="p-3 bg-red-900/20 rounded-lg">
+												<p className="text-gray-400 text-center">
+													No stopped containers available
+												</p>
+											</div>
+										) : (
+											stats.containersInfo
+												.filter((container) => container.status === 'exited')
+												.map((container) => (
+													<div
+														key={container.name}
+														className="flex items-center justify-between p-3 bg-red-900/20 rounded-lg hover:bg-red-900/30 transition-colors">
+														<div className="flex items-center space-x-3">
+															<FaDocker className="w-5 h-5 text-red-400" />
+															<div>
+																<span className="text-silver font-medium">
+																	{container.name}
+																</span>
+																<p className="text-gray-400 text-sm">
+																	{container.tag}
+																</p>
+															</div>
+														</div>
+														<span className="text-gray-400 text-sm bg-red-900/30 px-2 py-1 rounded">
+															Stopped
+														</span>
+													</div>
+												))
+										)}
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
+					)}
 				</div>
 			</div>
 		</div>
