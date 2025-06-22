@@ -112,7 +112,7 @@ const MainMenu = () => {
 				throw new Error('Failed to fetch system information');
 			}
 
-			const [osInfo, cpuInfo, cpuUsageInfo, memoryInfo, storageInfo] =
+			const [osInfo, cpuInfo, cpuUsageInfo, memoryInfo, storageInfo, containersInfo] =
 				await Promise.all([
 					osResponse.json(),
 					cpuResponse.json(),
