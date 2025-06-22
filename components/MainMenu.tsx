@@ -98,14 +98,14 @@ const MainMenu = () => {
 				cpuUsageResponse,
 				memoryResponse,
 				storageResponse,
-				// containersResponse
+				containersResponse
 			] = await Promise.all([
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/server/info`),
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cpu/info`),
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cpu/usage`),
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/memory/usage`),
 				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/storage/info`),
-				// fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/docker/containers`),
+				fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/docker/containers`),
 			]);
 
 			if (!osResponse.ok || !cpuResponse.ok || !memoryResponse.ok) {
@@ -119,7 +119,7 @@ const MainMenu = () => {
 					cpuUsageResponse.json(),
 					memoryResponse.json(),
 					storageResponse.json(),
-					// containersResponse.json()
+					containersResponse.json()
 				]);
 
 			calculateTotalStorage(storageInfo);
@@ -141,7 +141,7 @@ const MainMenu = () => {
 					)} GB`,
 				},
 				storageInfo,
-				// containersInfo
+				containersInfo
 			}));
 		} catch (error) {
 			console.error('Error fetching system information:', error);
